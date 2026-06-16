@@ -222,18 +222,32 @@
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 @if(auth()->user()->hasRole(['superadmin','staff']))
+                                @if($spk->jumlah_toko > 0)
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size:0.7rem;opacity:0.4;cursor:not-allowed"
+                                        title="Tidak dapat diedit — SPK sudah memiliki data reklame" disabled>
+                                    <i class="fa-solid fa-lock"></i>
+                                </button>
+                                @else
                                 <a href="{{ route('spk.edit', $spk) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size:0.7rem" title="Edit SPK">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
                                 @endif
+                                @endif
                                 @if(auth()->user()->isSuperadmin())
+                                @if($spk->jumlah_toko > 0)
+                                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.7rem;opacity:0.4;cursor:not-allowed"
+                                        title="Tidak dapat dihapus — SPK sudah memiliki data reklame" disabled>
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                                @else
                                 <form method="POST" action="{{ route('spk.destroy', $spk) }}"
-                                      onsubmit="return confirm('Hapus SPK \'{{ addslashes($spk->no_spk) }}\' beserta {{ $spk->jumlah_toko }} toko di dalamnya?')">
+                                      onsubmit="return confirm('Hapus SPK \'{{ addslashes($spk->no_spk) }}\'?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.7rem" title="Hapus">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>
+                                @endif
                                 @endif
                             </div>
                         </td>

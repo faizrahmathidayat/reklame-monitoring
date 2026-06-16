@@ -125,9 +125,15 @@
 {{-- Edit SPK button --}}
 @if(auth()->user()->hasRole(['superadmin','staff']))
 <div class="mt-3">
+    @if($spk->reklames->isNotEmpty())
+    <button type="button" class="btn btn-outline-secondary btn-sm w-100" style="opacity:0.45;cursor:not-allowed" disabled>
+        <i class="fa-solid fa-lock me-1"></i>SPK Terkunci (memiliki data reklame)
+    </button>
+    @else
     <a href="{{ route('spk.edit', $spk) }}" class="btn btn-outline-secondary btn-sm w-100">
         <i class="fa-solid fa-pen me-1"></i>Edit SPK
     </a>
+    @endif
 </div>
 @endif
 
@@ -153,9 +159,16 @@
             <a href="{{ route('reklame.create', ['spk_id' => $spk->id]) }}" class="btn btn-primary btn-sm">
                 <i class="fa-solid fa-plus me-1"></i> Tambah Toko
             </a>
+            @if($spk->reklames->isNotEmpty())
+            <button type="button" class="btn btn-outline-secondary btn-sm" style="opacity:0.45;cursor:not-allowed"
+                    title="Tidak dapat diedit — SPK sudah memiliki data reklame" disabled>
+                <i class="fa-solid fa-lock me-1"></i> Edit SPK
+            </button>
+            @else
             <a href="{{ route('spk.edit', $spk) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-pen me-1"></i> Edit SPK
             </a>
+            @endif
             @endif
         </div>
     </div>

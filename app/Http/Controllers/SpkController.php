@@ -117,6 +117,11 @@ class SpkController extends Controller
 
     public function update(Request $request, Spk $spk)
     {
+        if ($spk->reklames()->exists()) {
+            return redirect()->back()
+                ->with('error', 'SPK "' . $spk->no_spk . '" tidak dapat diubah karena sudah memiliki data reklame.');
+        }
+
         $request->validate([
             'no_spk'              => ['required', 'string', 'max:100', Rule::unique('spks')->ignore($spk->id)],
             'tgl_spk'             => 'required|date',
@@ -153,6 +158,11 @@ class SpkController extends Controller
 
     public function destroy(Spk $spk)
     {
+        if ($spk->reklames()->exists()) {
+            return redirect()->back()
+                ->with('error', 'SPK "' . $spk->no_spk . '" tidak dapat dihapus karena sudah memiliki data reklame.');
+        }
+
         $noSpk = $spk->no_spk;
         $spk->delete();
         return redirect()->route('spk.index')
