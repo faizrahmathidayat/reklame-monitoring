@@ -535,11 +535,46 @@
         html[data-theme="light"] .alert { color: var(--text-primary) !important; }
 
         html[data-theme="light"] .table-dark-custom tbody tr:hover { background: rgba(99,102,241,0.06); }
+
+        /* ── Page Loader ── */
+        #page-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15,23,42,0.75);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #page-loader.show { display: flex; }
+        html[data-theme="light"] #page-loader { background: rgba(248,249,255,0.8); }
+        .page-loader-ring {
+            width: 42px; height: 42px;
+            border: 3px solid rgba(99,102,241,0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: loaderSpin 0.65s linear infinite;
+        }
+        @keyframes loaderSpin { to { transform: rotate(360deg); } }
+        .page-loader-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+        }
     </style>
 
     @stack('styles')
 </head>
 <body>
+
+<div id="page-loader">
+    <div class="page-loader-ring"></div>
+    <span class="page-loader-text">Memuat...</span>
+</div>
 
 {{-- ── Sidebar Overlay (mobile) ── --}}
 <div id="sidebarOverlay"></div>
@@ -782,5 +817,36 @@
 </script>
 
 @stack('scripts')
+
+<script>
+(function () {
+    var loader = document.getElementById('page-loader');
+    function showLoader() { loader.classList.add('show'); }
+
+    // Show on link navigation (skip: modal/collapse/dropdown toggles, hash, new tab)
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest('a[href]');
+        if (!el) return;
+        var href = el.getAttribute('href');
+        if (!href || href === '#' || href.charAt(0) === '#') return;
+        if (href.startsWith('javascript:')) return;
+        if (el.getAttribute('target') === '_blank') return;
+        if (el.hasAttribute('data-bs-toggle') || el.hasAttribute('data-bs-dismiss')) return;
+        if (el.hasAttribute('data-no-loading')) return;
+        showLoader();
+    });
+
+    // Show on form submit (skip if confirm dialog was cancelled)
+    document.addEventListener('submit', function (e) {
+        if (e.defaultPrevented) return;
+        showLoader();
+    });
+
+    // Hide if page restored from bfcache (browser back button)
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) loader.classList.remove('show');
+    });
+})();
+</script>
 </body>
 </html>

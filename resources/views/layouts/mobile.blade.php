@@ -347,10 +347,45 @@
         html[data-theme="light"] .role-badge.staff      { background: rgba(34,197,94,0.12);  color: #16a34a; }
         html[data-theme="light"] .role-badge.finance    { background: rgba(245,158,11,0.12); color: #d97706; }
 
+        /* ── Page Loader ── */
+        #page-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15,23,42,0.75);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #page-loader.show { display: flex; }
+        html[data-theme="light"] #page-loader { background: rgba(248,249,255,0.8); }
+        .page-loader-ring {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(99,102,241,0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: loaderSpin 0.65s linear infinite;
+        }
+        @keyframes loaderSpin { to { transform: rotate(360deg); } }
+        .page-loader-text {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+        }
+
         @stack('styles')
     </style>
 </head>
 <body>
+
+<div id="page-loader">
+    <div class="page-loader-ring"></div>
+    <span class="page-loader-text">Memuat...</span>
+</div>
 
 {{-- ── Top Bar ── --}}
 <header class="m-topbar">
@@ -530,6 +565,34 @@
 </script>
 
 @stack('scripts')
+
+<script>
+(function () {
+    var loader = document.getElementById('page-loader');
+    function showLoader() { loader.classList.add('show'); }
+
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest('a[href]');
+        if (!el) return;
+        var href = el.getAttribute('href');
+        if (!href || href === '#' || href.charAt(0) === '#') return;
+        if (href.startsWith('javascript:')) return;
+        if (el.getAttribute('target') === '_blank') return;
+        if (el.hasAttribute('data-bs-toggle') || el.hasAttribute('data-bs-dismiss')) return;
+        if (el.hasAttribute('data-no-loading')) return;
+        showLoader();
+    });
+
+    document.addEventListener('submit', function (e) {
+        if (e.defaultPrevented) return;
+        showLoader();
+    });
+
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) loader.classList.remove('show');
+    });
+})();
+</script>
 
 @if(auth()->check() && auth()->user()->hasRole(['superadmin','staff']))
 <script>
