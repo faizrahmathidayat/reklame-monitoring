@@ -1,9 +1,141 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════ MOBILE DASHBOARD ═══ --}}
+
+{{-- Stat Cards 2x2 --}}
+<div class="row g-2 mb-2">
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(99,102,241,0.15)">
+                <i class="fa-solid fa-file-contract" style="color:#818cf8"></i>
+            </div>
+            <div class="stat-value">{{ number_format($totalSpk) }}</div>
+            <div class="stat-label">Total SPK</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(251,146,60,0.15)">
+                <i class="fa-solid fa-spinner" style="color:#fb923c"></i>
+            </div>
+            <div class="stat-value">{{ number_format($totalProses) }}</div>
+            <div class="stat-label">Proses Aktif</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.15)">
+                <i class="fa-solid fa-circle-check" style="color:#4ade80"></i>
+            </div>
+            <div class="stat-value">{{ number_format($totalSelesai) }}</div>
+            <div class="stat-label">Selesai</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.15)">
+                <i class="fa-solid fa-ban" style="color:#f87171"></i>
+            </div>
+            <div class="stat-value">{{ number_format($totalCancel) }}</div>
+            <div class="stat-label">Cancel</div>
+        </div>
+    </div>
+</div>
+
+{{-- Brand Breakdown --}}
+@if($brandBreakdown->isNotEmpty())
+<div class="m-section-title">Ringkasan per Brand</div>
+@foreach($brandBreakdown as $row)
+<div class="m-card">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+        <span style="font-weight:600;font-size:0.875rem">{{ $row['brand']->nama_brand }}</span>
+        <span style="font-weight:700;color:var(--accent);font-size:0.875rem">{{ $row['total'] }}</span>
+    </div>
+    <div class="d-flex gap-2" style="font-size:0.72rem;color:var(--text-dim)">
+        <span><i class="fa-solid fa-spinner me-1" style="color:#fb923c"></i>{{ $row['proses'] }} Proses</span>
+        <span><i class="fa-solid fa-check me-1" style="color:#4ade80"></i>{{ $row['selesai'] }} Selesai</span>
+        @if($row['cancel'] > 0)
+        <span><i class="fa-solid fa-ban me-1" style="color:#f87171"></i>{{ $row['cancel'] }} Cancel</span>
+        @endif
+    </div>
+</div>
+@endforeach
+@endif
+
+{{-- Wilayah Breakdown --}}
+@php $activeWilayahs = $wilayahBreakdown->filter(function($r){ return $r['total'] > 0; }); @endphp
+@if($activeWilayahs->isNotEmpty())
+<div class="m-section-title">Ringkasan per DC / Wilayah</div>
+@foreach($activeWilayahs as $row)
+<div class="m-card">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+        <div>
+            <div style="font-weight:600;font-size:0.85rem">{{ $row['wilayah']->nama_wilayah }}</div>
+            <div style="font-size:0.68rem;color:var(--text-dim);font-family:monospace">{{ $row['wilayah']->kode_wilayah }}</div>
+        </div>
+        <span style="font-weight:700;color:var(--accent)">{{ $row['total'] }}</span>
+    </div>
+    <div class="d-flex gap-2" style="font-size:0.72rem">
+        <span style="color:#fb923c">{{ $row['proses'] }} Proses</span>
+        <span style="color:#4ade80">{{ $row['selesai'] }} Selesai</span>
+        @if($row['cancel'] > 0)<span style="color:#f87171">{{ $row['cancel'] }} Cancel</span>@endif
+    </div>
+</div>
+@endforeach
+@endif
+
+{{-- Deadline Near --}}
+@if($deadlineNear->isNotEmpty())
+<div class="m-section-title"><i class="fa-solid fa-triangle-exclamation me-1" style="color:#f59e0b"></i>Deadline ≤ 14 Hari</div>
+@foreach($deadlineNear as $r)
+@php $daysLeft = (int) now()->diffInDays($r->deadline, false); @endphp
+<a href="{{ route('reklame.show', $r->id) }}" class="m-card d-block text-decoration-none">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <div style="font-weight:600;font-size:0.82rem;color:var(--text-primary)">{{ $r->no_spk ?? '—' }}</div>
+            <div style="font-size:0.72rem;color:var(--text-dim)">{{ optional($r->toko)->nama_toko ?? '-' }}</div>
+        </div>
+        <div class="text-end">
+            <div style="font-size:0.78rem;font-weight:600;color:{{ $daysLeft <= 3 ? '#ef4444' : ($daysLeft <= 7 ? '#f59e0b' : '#94a3b8') }}">
+                {{ $r->deadline->format('d/m/Y') }}
+            </div>
+            <div style="font-size:0.65rem;color:var(--text-dim)">{{ $daysLeft }} hari lagi</div>
+        </div>
+    </div>
+    <div class="mt-1">
+        <span class="status-badge {{ $r->statusBadgeClass() }}" style="font-size:0.6rem">{{ $r->status }}</span>
+    </div>
+</a>
+@endforeach
+@endif
+
+{{-- Latest --}}
+<div class="m-section-title">5 Data Terbaru</div>
+@forelse($latestReklames as $r)
+<a href="{{ route('reklame.show', $r->id) }}" class="m-card d-block text-decoration-none">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <div style="font-weight:600;font-size:0.82rem;color:var(--text-primary)">{{ $r->no_spk ?? '—' }}</div>
+            <div style="font-size:0.72rem;color:var(--text-dim)">{{ optional($r->toko)->nama_toko ?? '-' }}</div>
+        </div>
+        <div class="text-end">
+            <span class="status-badge {{ $r->statusBadgeClass() }}" style="font-size:0.6rem">{{ $r->status }}</span>
+            <div style="font-size:0.65rem;color:var(--text-dim);margin-top:3px">{{ $r->tgl_spk ? $r->tgl_spk->format('d/m/Y') : '-' }}</div>
+        </div>
+    </div>
+</a>
+@empty
+<div class="m-card text-center" style="color:var(--text-dim);font-size:0.82rem">Belum ada data.</div>
+@endforelse
+
+@else
+{{-- ═══════════════════════════════════════ DESKTOP DASHBOARD ═══ --}}
 
 {{-- Page Header --}}
 <div class="page-header">
@@ -391,8 +523,12 @@
     </div>
 </div>
 
+@endif
+{{-- ═════════════════════════════════════════════════════════════ --}}
+
 @endsection
 
+@if(!$isMobile)
 @php
     $chartLabelsJson = json_encode($chartLabels);
     $chartDataJson   = json_encode($chartData);
@@ -454,3 +590,4 @@
 @endif
 </script>
 @endpush
+@endif

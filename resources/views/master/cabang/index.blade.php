@@ -1,9 +1,98 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Master Cabang')
 @section('page-title', 'Master Cabang')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE CABANG ═══ --}}
+
+<form method="GET" action="{{ route('master.cabang.index') }}" class="mb-3">
+    <div class="input-group input-group-sm mb-2">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Cari kode / nama cabang..." value="{{ request('search') }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+    </div>
+    <div class="row g-1">
+        <div class="col-9">
+            <select name="wilayah_id" class="form-select form-select-sm">
+                <option value="">-- Semua Wilayah --</option>
+                @foreach($wilayahs as $w)
+                    <option value="{{ $w->id }}" {{ request('wilayah_id') == $w->id ? 'selected' : '' }}>{{ $w->nama_wilayah }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-3">
+            @if(request()->anyFilled(['search','wilayah_id']))
+            <a href="{{ route('master.cabang.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fa-solid fa-times"></i>
+            </a>
+            @endif
+        </div>
+    </div>
+</form>
+
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> cabang
+</div>
+
+@forelse($data as $item)
+<div class="m-card mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">{{ $item->nama_cabang }}</div>
+            <div style="font-family:monospace;font-size:0.75rem;color:#a5b4fc">{{ $item->kode_cabang }}</div>
+            <div style="font-size:0.72rem;color:var(--text-dim)">{{ optional($item->wilayah)->nama_wilayah ?? '-' }}</div>
+        </div>
+        @if($item->is_active)
+            <span class="status-badge status-selesai" style="font-size:0.6rem;padding:2px 7px">Aktif</span>
+        @else
+            <span class="status-badge status-cancel" style="font-size:0.6rem;padding:2px 7px">Nonaktif</span>
+        @endif
+    </div>
+    <div class="d-flex gap-1 mt-2">
+        <form method="POST" action="{{ route('master.cabang.toggle', $item->id) }}" class="flex-fill">
+            @csrf @method('PATCH')
+            <button type="submit" class="btn btn-sm w-100 py-1 {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" style="font-size:0.72rem">
+                <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} me-1"></i>
+                {{ $item->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+            </button>
+        </form>
+        <button type="button" class="btn btn-sm btn-outline-secondary flex-fill py-1" style="font-size:0.72rem"
+                data-bs-toggle="modal" data-bs-target="#modalEdit"
+                data-id="{{ $item->id }}"
+                data-kode="{{ $item->kode_cabang }}"
+                data-nama="{{ $item->nama_cabang }}"
+                data-wilayah="{{ $item->wilayah_id }}">
+            <i class="fa-solid fa-pen me-1"></i>Edit
+        </button>
+        <form method="POST" action="{{ route('master.cabang.destroy', $item->id) }}"
+              onsubmit="return confirm('Hapus cabang \'{{ $item->nama_cabang }}\'?')">
+            @csrf @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.72rem">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+</div>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data cabang.</span>
+</div>
+@endforelse
+
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">{{ $data->links() }}</div>
+@endif
+
+<button class="m-fab" data-bs-toggle="modal" data-bs-target="#modalCreate">
+    <i class="fa-solid fa-plus"></i>
+</button>
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP CABANG ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -131,6 +220,10 @@
         @endif
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
+
 
 {{-- Modal Create --}}
 <div class="modal fade" id="modalCreate" tabindex="-1" aria-hidden="true">

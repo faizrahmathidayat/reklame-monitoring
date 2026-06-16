@@ -1,9 +1,130 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Manajemen User')
 @section('page-title', 'Manajemen User')
 
 @section('content')
+
+{{-- Flash Messages --}}
+@if(session('success'))
+<div class="alert mb-3" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#86efac;font-size:0.85rem;border-radius:0.5rem;padding:0.6rem 0.85rem">
+    <i class="fa-solid fa-circle-check me-1"></i>{{ session('success') }}
+</div>
+@endif
+@if(session('error'))
+<div class="alert mb-3" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;font-size:0.85rem;border-radius:0.5rem;padding:0.6rem 0.85rem">
+    <i class="fa-solid fa-circle-exclamation me-1"></i>{{ session('error') }}
+</div>
+@endif
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE USERS ═══ --}}
+
+{{-- Search + Role filter --}}
+<form method="GET" action="{{ route('users.index') }}" class="mb-3">
+    <div class="input-group input-group-sm mb-2">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Cari nama / username / email..." value="{{ $search }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+    </div>
+    <div class="row g-1">
+        <div class="col-8">
+            <select name="role" class="form-select form-select-sm">
+                <option value="">-- Semua Role --</option>
+                <option value="superadmin" {{ $role === 'superadmin' ? 'selected' : '' }}>Superadmin</option>
+                <option value="staff"      {{ $role === 'staff'      ? 'selected' : '' }}>Staff</option>
+                <option value="finance"    {{ $role === 'finance'    ? 'selected' : '' }}>Finance</option>
+            </select>
+        </div>
+        <div class="col-4">
+            @if($search || $role)
+            <a href="{{ route('users.index') }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+            @endif
+        </div>
+    </div>
+</form>
+
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> user
+</div>
+
+{{-- User Cards --}}
+@forelse($data as $item)
+<div class="m-card mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">
+                {{ $item->name }}
+                @if($item->id === auth()->id())
+                <span style="font-size:0.65rem;color:var(--accent);margin-left:4px"><i class="fa-solid fa-user me-1"></i>Anda</span>
+                @endif
+            </div>
+            <div style="font-family:monospace;font-size:0.75rem;color:var(--text-dim)">{{ $item->username ?? '—' }}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">{{ $item->email }}</div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+            <span class="role-badge {{ $item->role }}">{{ $item->role }}</span>
+            @if($item->is_active)
+                <span class="status-badge status-selesai" style="font-size:0.6rem;padding:1px 6px">Aktif</span>
+            @else
+                <span class="status-badge status-cancel" style="font-size:0.6rem;padding:1px 6px">Nonaktif</span>
+            @endif
+        </div>
+    </div>
+    <div class="d-flex gap-1 mt-2">
+        {{-- Toggle --}}
+        <form method="POST" action="{{ route('users.toggle', $item->id) }}" class="flex-fill">
+            @csrf @method('PATCH')
+            <button type="submit"
+                    class="btn btn-sm w-100 py-1 {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}"
+                    style="font-size:0.72rem"
+                    {{ $item->id === auth()->id() ? 'disabled' : '' }}>
+                <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} me-1"></i>
+                {{ $item->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+            </button>
+        </form>
+        {{-- Edit --}}
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary flex-fill py-1"
+                style="font-size:0.72rem"
+                data-bs-toggle="modal" data-bs-target="#modalEdit"
+                data-id="{{ $item->id }}"
+                data-name="{{ $item->name }}"
+                data-username="{{ $item->username }}"
+                data-email="{{ $item->email }}"
+                data-role="{{ $item->role }}">
+            <i class="fa-solid fa-pen me-1"></i>Edit
+        </button>
+        {{-- Hapus --}}
+        @if($item->id !== auth()->id())
+        <form method="POST" action="{{ route('users.destroy', $item->id) }}"
+              onsubmit="return confirm('Hapus user \'{{ addslashes($item->name) }}\'?')">
+            @csrf @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.72rem">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+        @endif
+    </div>
+</div>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada user.</span>
+</div>
+@endforelse
+
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">{{ $data->links() }}</div>
+@endif
+
+{{-- FAB --}}
+<button class="m-fab" data-bs-toggle="modal" data-bs-target="#modalCreate">
+    <i class="fa-solid fa-plus"></i>
+</button>
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP USERS ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -21,18 +142,6 @@
         </button>
     </div>
 </div>
-
-{{-- Flash Messages --}}
-@if(session('success'))
-<div class="alert mb-3" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#86efac;font-size:0.85rem;border-radius:0.5rem;padding:0.6rem 0.85rem">
-    <i class="fa-solid fa-circle-check me-1"></i>{{ session('success') }}
-</div>
-@endif
-@if(session('error'))
-<div class="alert mb-3" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;font-size:0.85rem;border-radius:0.5rem;padding:0.6rem 0.85rem">
-    <i class="fa-solid fa-circle-exclamation me-1"></i>{{ session('error') }}
-</div>
-@endif
 
 {{-- Filter --}}
 <div class="card-dark mb-3">
@@ -110,7 +219,6 @@
                         </td>
                         <td class="text-center">
                             <div class="d-flex gap-1 justify-content-center">
-                                {{-- Toggle Status --}}
                                 <form method="POST" action="{{ route('users.toggle', $item->id) }}">
                                     @csrf @method('PATCH')
                                     <button type="submit"
@@ -121,8 +229,6 @@
                                         <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
                                     </button>
                                 </form>
-
-                                {{-- Edit --}}
                                 <button type="button"
                                         class="btn btn-sm btn-outline-secondary py-1 px-2"
                                         style="font-size:0.7rem"
@@ -135,8 +241,6 @@
                                         title="Edit">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-
-                                {{-- Hapus --}}
                                 @if($item->id !== auth()->id())
                                 <form method="POST" action="{{ route('users.destroy', $item->id) }}"
                                       onsubmit="return confirm('Hapus user \'{{ addslashes($item->name) }}\'?')">
@@ -166,6 +270,9 @@
         @endif
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
 
 
 {{-- ── Modal Create ── --}}
@@ -304,7 +411,6 @@
         document.getElementById('edit_username').value  = btn.dataset.username || '';
         document.getElementById('edit_email').value     = btn.dataset.email;
         document.getElementById('edit_role').value      = btn.dataset.role;
-        // clear password fields on each open
         document.querySelectorAll('#modalEdit input[type="password"]').forEach(function (el) { el.value = ''; });
     });
 

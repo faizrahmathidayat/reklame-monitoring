@@ -1,9 +1,103 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Data SPK')
 @section('page-title', 'Data SPK')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE SPK INDEX ═══ --}}
+
+{{-- Search + Filter --}}
+<form method="GET" action="{{ route('spk.index') }}" class="mb-3">
+    <div class="input-group input-group-sm mb-2">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Cari No. SPK..." value="{{ $search }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+    </div>
+    <div class="row g-1">
+        <div class="col-6">
+            <select name="wilayah_id" class="form-select form-select-sm">
+                <option value="">-- Semua DC --</option>
+                @foreach($wilayahs as $w)
+                    <option value="{{ $w->id }}" {{ $wilayahId == $w->id ? 'selected' : '' }}>{{ $w->nama_wilayah }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-6">
+            <select name="brand_id" class="form-select form-select-sm">
+                <option value="">-- Semua Brand --</option>
+                @foreach($brands as $b)
+                    <option value="{{ $b->id }}" {{ $brandId == $b->id ? 'selected' : '' }}>{{ $b->nama_brand }}</option>
+                @endforeach
+            </select>
+        </div>
+        @if($search || $wilayahId || $brandId || $tglDari || $tglSampai)
+        <div class="col-12">
+            <a href="{{ route('spk.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fa-solid fa-times me-1"></i>Reset Filter
+            </a>
+        </div>
+        @endif
+    </div>
+</form>
+
+{{-- Total info --}}
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> SPK
+</div>
+
+{{-- SPK Cards --}}
+@forelse($data as $spk)
+<a href="{{ route('spk.show', $spk) }}" class="m-card d-block text-decoration-none mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <span style="font-family:monospace;font-weight:700;font-size:0.85rem;color:var(--accent)">{{ $spk->no_spk }}</span>
+        <span style="background:rgba(99,102,241,0.15);color:#a5b4fc;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:600">
+            {{ $spk->jumlah_toko }} toko
+        </span>
+    </div>
+    <div class="d-flex gap-2 mb-1" style="font-size:0.78rem;color:var(--text-muted)">
+        <span><i class="fa-solid fa-map-marker-alt me-1" style="color:var(--accent);opacity:0.7"></i>{{ optional($spk->wilayah)->nama_wilayah ?? '—' }}</span>
+        <span><i class="fa-solid fa-tag me-1" style="opacity:0.5"></i>{{ optional($spk->brand)->nama_brand ?? '—' }}</span>
+    </div>
+    <div class="d-flex justify-content-between align-items-center" style="font-size:0.72rem;color:var(--text-dim)">
+        <span><i class="fa-solid fa-calendar me-1"></i>{{ optional($spk->tgl_spk)->format('d/m/Y') }}</span>
+        @if($spk->deadline)
+        @php $dl = now()->diffInDays($spk->deadline, false); @endphp
+        <span style="color:{{ $dl <= 0 ? '#fca5a5' : ($dl <= 7 ? '#fcd34d' : 'var(--text-dim)') }}">
+            <i class="fa-solid fa-clock me-1"></i>{{ $spk->deadline->format('d/m/Y') }}
+        </span>
+        @endif
+    </div>
+    @if($spk->pic)
+    <div style="font-size:0.68rem;color:var(--text-dim);margin-top:4px">
+        <i class="fa-solid fa-user-tie me-1"></i>{{ $spk->pic->nama_pic }}
+    </div>
+    @endif
+</a>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data SPK.</span>
+</div>
+@endforelse
+
+{{-- Pagination --}}
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">
+    {{ $data->links() }}
+</div>
+@endif
+
+{{-- FAB Tambah SPK --}}
+@if(auth()->user()->hasRole(['superadmin','staff']))
+<a href="{{ route('spk.create') }}" class="m-fab">
+    <i class="fa-solid fa-plus"></i>
+</a>
+@endif
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP SPK INDEX ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -161,5 +255,8 @@
         @endif
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════ --}}
 
 @endsection

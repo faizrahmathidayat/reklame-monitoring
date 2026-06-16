@@ -1,9 +1,92 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Master PIC')
 @section('page-title', 'Master PIC')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE PIC ═══ --}}
+
+<form method="GET" action="{{ route('master.pic.index') }}" class="mb-3">
+    <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Cari nama / jabatan..." value="{{ request('search') }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+        @if(request('search'))
+        <a href="{{ route('master.pic.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-times"></i>
+        </a>
+        @endif
+    </div>
+</form>
+
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> PIC
+</div>
+
+@forelse($data as $item)
+<div class="m-card mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">{{ $item->nama_pic }}</div>
+            @if($item->jabatan)
+            <div style="font-size:0.75rem;color:var(--text-muted)">{{ $item->jabatan }}</div>
+            @endif
+            @if($item->telepon)
+            <div style="font-size:0.72rem;color:var(--text-dim);font-family:monospace">
+                <i class="fa-solid fa-phone me-1" style="opacity:0.5"></i>{{ $item->telepon }}
+            </div>
+            @endif
+        </div>
+        @if($item->is_active)
+            <span class="status-badge status-selesai" style="font-size:0.6rem;padding:2px 7px">Aktif</span>
+        @else
+            <span class="status-badge status-cancel" style="font-size:0.6rem;padding:2px 7px">Nonaktif</span>
+        @endif
+    </div>
+    <div class="d-flex gap-1 mt-2">
+        <form method="POST" action="{{ route('master.pic.toggle', $item->id) }}" class="flex-fill">
+            @csrf @method('PATCH')
+            <button type="submit" class="btn btn-sm w-100 py-1 {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" style="font-size:0.72rem">
+                <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} me-1"></i>
+                {{ $item->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+            </button>
+        </form>
+        <button type="button" class="btn btn-sm btn-outline-secondary flex-fill py-1" style="font-size:0.72rem"
+                data-bs-toggle="modal" data-bs-target="#modalEdit"
+                data-id="{{ $item->id }}"
+                data-nama="{{ $item->nama_pic }}"
+                data-jabatan="{{ $item->jabatan }}"
+                data-telepon="{{ $item->telepon }}">
+            <i class="fa-solid fa-pen me-1"></i>Edit
+        </button>
+        <form method="POST" action="{{ route('master.pic.destroy', $item->id) }}"
+              onsubmit="return confirm('Hapus PIC \'{{ $item->nama_pic }}\'?')">
+            @csrf @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.72rem">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+</div>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data PIC.</span>
+</div>
+@endforelse
+
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">{{ $data->links() }}</div>
+@endif
+
+<button class="m-fab" data-bs-toggle="modal" data-bs-target="#modalCreate">
+    <i class="fa-solid fa-plus"></i>
+</button>
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP PIC ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -119,6 +202,10 @@
         @endif
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
+
 
 {{-- Modal Create --}}
 <div class="modal fade" id="modalCreate" tabindex="-1" aria-hidden="true">

@@ -1,10 +1,25 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Edit Data Reklame')
 @section('page-title', 'Edit Data Reklame')
 
 @section('content')
 
+@if($isMobile)
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">
+        <i class="fa-solid fa-pen me-1" style="color:var(--accent)"></i>Edit Reklame
+    </span>
+    <div class="d-flex gap-2">
+        <a href="{{ route('reklame.show', $reklame) }}" class="btn btn-outline-secondary btn-sm py-1" style="font-size:0.75rem">
+            <i class="fa-solid fa-eye me-1"></i>Detail
+        </a>
+        <a href="{{ route('reklame.index') }}" class="btn btn-outline-secondary btn-sm py-1" style="font-size:0.75rem">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+    </div>
+</div>
+@else
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
         <div>
@@ -28,6 +43,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <form method="POST" action="{{ route('reklame.update', $reklame) }}">
     @csrf

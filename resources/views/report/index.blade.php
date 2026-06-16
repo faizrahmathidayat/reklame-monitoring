@@ -1,9 +1,148 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Laporan Reklame')
 @section('page-title', 'Laporan')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE LAPORAN ═══ --}}
+
+{{-- Filter Form --}}
+<form method="GET" action="{{ route('report') }}" class="mb-3">
+    <div class="row g-1 mb-1">
+        <div class="col-6">
+            <input type="date" name="tgl_dari" class="form-control form-control-sm" value="{{ $tglDari }}" title="Dari Tgl SPK">
+        </div>
+        <div class="col-6">
+            <input type="date" name="tgl_sampai" class="form-control form-control-sm" value="{{ $tglSampai }}" title="Sampai">
+        </div>
+    </div>
+    <div class="row g-1 mb-1">
+        <div class="col-6">
+            <select name="brand_id" class="form-select form-select-sm">
+                <option value="">-- Semua Brand --</option>
+                @foreach($allBrands as $b)
+                    <option value="{{ $b->id }}" {{ $brandId == $b->id ? 'selected' : '' }}>{{ $b->nama_brand }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-6">
+            <select name="wilayah_id" class="form-select form-select-sm">
+                <option value="">-- Semua Wilayah --</option>
+                @foreach($allWilayahs as $w)
+                    <option value="{{ $w->id }}" {{ $wilayahId == $w->id ? 'selected' : '' }}>{{ $w->nama_wilayah }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+    <div class="row g-1">
+        <div class="col-8">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">-- Semua Status --</option>
+                @foreach($statuses as $s)
+                    <option value="{{ $s }}" {{ $statusFilter === $s ? 'selected' : '' }}>{{ $s }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary btn-sm w-100">
+                <i class="fa-solid fa-filter me-1"></i>Filter
+            </button>
+        </div>
+        @if($tglDari || $tglSampai || $wilayahId || $brandId || $statusFilter)
+        <div class="col-12">
+            <a href="{{ route('report') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fa-solid fa-times me-1"></i>Reset
+            </a>
+        </div>
+        @endif
+    </div>
+</form>
+
+{{-- Stat Cards 2x2 --}}
+<div class="row g-2 mb-3">
+    <div class="col-6">
+        <div class="m-card text-center py-2">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--accent)">{{ number_format($totalSpk) }}</div>
+            <div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em">Total SPK</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="m-card text-center py-2">
+            <div style="font-size:1.4rem;font-weight:800;color:#fb923c">{{ number_format($totalProses) }}</div>
+            <div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em">Proses Aktif</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="m-card text-center py-2">
+            <div style="font-size:1.4rem;font-weight:800;color:#4ade80">{{ number_format($totalSelesai) }}</div>
+            <div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em">Selesai</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="m-card text-center py-2">
+            <div style="font-size:1.4rem;font-weight:800;color:#f87171">{{ number_format($totalCancel) }}</div>
+            <div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em">Cancel</div>
+        </div>
+    </div>
+</div>
+
+{{-- Breakdown per Brand --}}
+<div class="m-section-title mb-2">
+    <i class="fa-solid fa-chart-bar me-1"></i>Breakdown per Brand
+</div>
+
+@forelse($brandMatrix as $group)
+<div class="m-card mb-2">
+    {{-- Brand header --}}
+    <div style="font-weight:700;font-size:0.8rem;color:#c4b5fd;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">
+        <i class="fa-solid fa-tag me-1"></i>{{ $group['brand']->nama_brand }}
+        <span style="font-size:0.72rem;color:#818cf8;margin-left:6px">{{ $group['total'] }} total</span>
+    </div>
+    {{-- DC rows --}}
+    @foreach($group['wilayahs'] as $row)
+    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:0.78rem;padding-left:8px;border-left:2px solid rgba(99,102,241,0.3)">
+        <span style="color:var(--text-muted)">{{ $row['wilayah']->nama_wilayah }}</span>
+        <div class="d-flex gap-2">
+            @foreach($statuses as $s)
+            @if($row['data'][$s] > 0)
+            <span style="font-size:0.68rem;background:rgba(99,102,241,0.12);color:#a5b4fc;padding:1px 6px;border-radius:4px">
+                {{ $s }}: {{ $row['data'][$s] }}
+            </span>
+            @endif
+            @endforeach
+            <span style="font-weight:700;color:#818cf8;font-size:0.75rem">{{ $row['total'] }}</span>
+        </div>
+    </div>
+    @endforeach
+    {{-- Subtotal --}}
+    <div class="d-flex justify-content-between align-items-center mt-1 pt-1" style="border-top:1px solid rgba(99,102,241,0.2);font-size:0.75rem">
+        <span style="color:#a5b4fc;font-weight:600">Subtotal</span>
+        <span style="font-weight:700;color:#818cf8">{{ $group['total'] }}</span>
+    </div>
+</div>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data laporan.</span>
+</div>
+@endforelse
+
+{{-- Link ke Cetak --}}
+@php $cetakParams = array_merge(request()->only(['tgl_dari', 'tgl_sampai', 'brand_id', 'wilayah_id', 'status'])); @endphp
+<div class="mt-3 d-flex gap-2">
+    <a href="{{ route('report.cetak', $cetakParams) }}" target="_blank" class="btn btn-outline-secondary btn-sm flex-fill">
+        <i class="fa-solid fa-print me-1"></i>Cetak PDF
+    </a>
+    @php $exportParams = array_merge(request()->query(), ['export' => 'csv']); @endphp
+    <a href="{{ route('report', $exportParams) }}" class="btn btn-outline-success btn-sm flex-fill">
+        <i class="fa-solid fa-file-csv me-1"></i>Export CSV
+    </a>
+</div>
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP LAPORAN ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -257,5 +396,8 @@
         </div>
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
 
 @endsection

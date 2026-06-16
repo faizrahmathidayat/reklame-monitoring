@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Tambah Data Reklame')
 @section('page-title', 'Tambah Data Reklame')
@@ -12,6 +12,16 @@
     $backLabel = $defaultSpkId ? 'Kembali ke SPK' : 'Kembali';
 @endphp
 
+@if($isMobile)
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">
+        <i class="fa-solid fa-plus-circle me-1" style="color:var(--accent)"></i>Tambah Reklame
+    </span>
+    <a href="{{ $backUrl }}" class="btn btn-outline-secondary btn-sm py-1">
+        <i class="fa-solid fa-arrow-left me-1"></i>{{ $backLabel }}
+    </a>
+</div>
+@else
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
         <div>
@@ -34,6 +44,7 @@
         </a>
     </div>
 </div>
+@endif
 
 <form method="POST" action="{{ route('reklame.store') }}">
     @csrf

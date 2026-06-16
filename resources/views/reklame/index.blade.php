@@ -1,9 +1,98 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Data Reklame')
 @section('page-title', 'Data Reklame')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE REKLAME INDEX ═══ --}}
+
+{{-- Search + Filter --}}
+<form method="GET" action="{{ route('reklame.index') }}" class="mb-3">
+    <div class="input-group input-group-sm mb-2">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="No. SPK / Kode / Nama Toko..." value="{{ request('search') }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+    </div>
+    <div class="row g-1">
+        <div class="col-6">
+            <select name="wilayah_id" class="form-select form-select-sm">
+                <option value="">-- Semua Wilayah --</option>
+                @foreach($wilayahs as $w)
+                    <option value="{{ $w->id }}" {{ request('wilayah_id') == $w->id ? 'selected' : '' }}>{{ $w->nama_wilayah }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-6">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">-- Semua Status --</option>
+                @foreach($statuses as $s)
+                    <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                @endforeach
+            </select>
+        </div>
+        @if(request()->anyFilled(['search','wilayah_id','status','tgl_dari','tgl_sampai']))
+        <div class="col-12 mt-1">
+            <a href="{{ route('reklame.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fa-solid fa-times me-1"></i>Reset Filter
+            </a>
+        </div>
+        @endif
+    </div>
+</form>
+
+{{-- Total info --}}
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> data reklame
+</div>
+
+{{-- Reklame Cards --}}
+@forelse($data as $item)
+@php $deadlinePast = $item->deadline && $item->deadline->isPast() && !$item->isSelesai() && !$item->isCancel(); @endphp
+<a href="{{ route('reklame.show', $item->id) }}" class="m-card d-block text-decoration-none mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <span style="font-family:monospace;font-weight:700;font-size:0.82rem;color:var(--accent)">{{ $item->no_spk }}</span>
+        <span class="status-badge {{ $item->statusBadgeClass() }}" style="font-size:0.65rem;padding:2px 7px">{{ $item->status }}</span>
+    </div>
+    <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary);margin-bottom:3px">
+        {{ optional($item->toko)->nama_toko ?? '-' }}
+        @if($item->kode_toko)<span style="font-family:monospace;color:var(--text-dim);font-size:0.7rem;margin-left:4px">{{ $item->kode_toko }}</span>@endif
+    </div>
+    <div class="d-flex gap-2" style="font-size:0.75rem;color:var(--text-muted)">
+        <span><i class="fa-solid fa-map-marker-alt me-1" style="color:var(--accent);opacity:0.7"></i>{{ optional($item->wilayah)->nama_wilayah ?? '-' }}</span>
+        <span><i class="fa-solid fa-tag me-1" style="opacity:0.5"></i>{{ optional($item->brand)->nama_brand ?? '-' }}</span>
+    </div>
+    @if($item->deadline)
+    <div style="font-size:0.7rem;margin-top:4px;color:{{ $deadlinePast ? '#fca5a5' : 'var(--text-dim)' }}">
+        <i class="fa-solid fa-clock me-1"></i>Deadline: {{ $item->deadline->format('d/m/Y') }}
+        @if($deadlinePast)<i class="fa-solid fa-triangle-exclamation ms-1" style="color:#ef4444"></i>@endif
+    </div>
+    @endif
+</a>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data reklame.</span>
+</div>
+@endforelse
+
+{{-- Pagination --}}
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">
+    {{ $data->links() }}
+</div>
+@endif
+
+{{-- FAB Tambah --}}
+@if(auth()->user()->hasRole(['superadmin','staff']))
+<a href="{{ route('reklame.create') }}" class="m-fab">
+    <i class="fa-solid fa-plus"></i>
+</a>
+@endif
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP REKLAME INDEX ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -182,5 +271,8 @@
         @endif
     </div>
 </div>
+
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
 
 @endsection

@@ -1,10 +1,25 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Edit SPK')
 @section('page-title', 'Edit SPK')
 
 @section('content')
 
+@if($isMobile)
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">
+        <i class="fa-solid fa-pen me-1" style="color:var(--accent)"></i>Edit SPK
+    </span>
+    <div class="d-flex gap-2">
+        <a href="{{ route('spk.show', $spk) }}" class="btn btn-outline-secondary btn-sm py-1" style="font-size:0.75rem">
+            <i class="fa-solid fa-eye me-1"></i>Detail
+        </a>
+        <a href="{{ route('spk.index') }}" class="btn btn-outline-secondary btn-sm py-1" style="font-size:0.75rem">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+    </div>
+</div>
+@else
 <div class="page-header">
     <div>
         <h2><i class="fa-solid fa-pen me-2" style="color:var(--accent)"></i>Edit SPK</h2>
@@ -18,6 +33,7 @@
         </nav>
     </div>
 </div>
+@endif
 
 @if($errors->any())
 <div class="alert mb-4" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:0.625rem;padding:0.75rem 1rem;font-size:0.875rem">

@@ -1,9 +1,88 @@
-@extends('layouts.app')
+@extends($isMobile ? 'layouts.mobile' : 'layouts.app')
 
 @section('title', 'Master Wilayah')
 @section('page-title', 'Master Wilayah / DC')
 
 @section('content')
+
+@if($isMobile)
+{{-- ═══════════════════════════════════════════ MOBILE WILAYAH ═══ --}}
+
+<form method="GET" action="{{ route('master.wilayah.index') }}" class="mb-3">
+    <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Cari kode / nama wilayah..." value="{{ request('search') }}">
+        <button type="submit" class="btn btn-primary btn-sm px-3">Cari</button>
+        @if(request('search'))
+        <a href="{{ route('master.wilayah.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-times"></i>
+        </a>
+        @endif
+    </div>
+</form>
+
+<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px">
+    Total: <strong style="color:var(--text-primary)">{{ $data->total() }}</strong> wilayah
+</div>
+
+@forelse($data as $item)
+<div class="m-card mb-2">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+        <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">{{ $item->nama_wilayah }}</div>
+            <div style="font-family:monospace;font-size:0.75rem;color:#a5b4fc">{{ $item->kode_wilayah }}</div>
+            @if($item->keterangan)
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">{{ $item->keterangan }}</div>
+            @endif
+        </div>
+        @if($item->is_active)
+            <span class="status-badge status-selesai" style="font-size:0.6rem;padding:2px 7px">Aktif</span>
+        @else
+            <span class="status-badge status-cancel" style="font-size:0.6rem;padding:2px 7px">Nonaktif</span>
+        @endif
+    </div>
+    <div class="d-flex gap-1 mt-2">
+        <form method="POST" action="{{ route('master.wilayah.toggle', $item->id) }}" class="flex-fill">
+            @csrf @method('PATCH')
+            <button type="submit" class="btn btn-sm w-100 py-1 {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" style="font-size:0.72rem">
+                <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} me-1"></i>
+                {{ $item->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+            </button>
+        </form>
+        <button type="button" class="btn btn-sm btn-outline-secondary flex-fill py-1" style="font-size:0.72rem"
+                data-bs-toggle="modal" data-bs-target="#modalEdit"
+                data-id="{{ $item->id }}"
+                data-kode="{{ $item->kode_wilayah }}"
+                data-nama="{{ $item->nama_wilayah }}"
+                data-ket="{{ $item->keterangan }}">
+            <i class="fa-solid fa-pen me-1"></i>Edit
+        </button>
+        <form method="POST" action="{{ route('master.wilayah.destroy', $item->id) }}"
+              onsubmit="return confirm('Hapus wilayah \'{{ $item->nama_wilayah }}\'?')">
+            @csrf @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.72rem">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+</div>
+@empty
+<div class="m-card text-center py-4" style="color:var(--text-dim)">
+    <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+    <span style="font-size:0.85rem">Belum ada data wilayah.</span>
+</div>
+@endforelse
+
+@if($data->hasPages())
+<div class="mt-3 d-flex justify-content-center">{{ $data->links() }}</div>
+@endif
+
+<button class="m-fab" data-bs-toggle="modal" data-bs-target="#modalCreate">
+    <i class="fa-solid fa-plus"></i>
+</button>
+
+@else
+{{-- ═══════════════════════════════════════════ DESKTOP WILAYAH ═══ --}}
 
 <div class="page-header">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -22,7 +101,6 @@
     </div>
 </div>
 
-{{-- Search --}}
 <div class="card-dark mb-3">
     <div class="card-body py-2 px-3">
         <form method="GET" action="{{ route('master.wilayah.index') }}">
@@ -44,7 +122,6 @@
     </div>
 </div>
 
-{{-- Table --}}
 <div class="card-dark">
     <div class="card-header d-flex align-items-center justify-content-between">
         <h6 class="card-title"><i class="fa-solid fa-table me-2"></i>Daftar Wilayah</h6>
@@ -79,7 +156,6 @@
                         </td>
                         <td class="text-center">
                             <div class="d-flex gap-1 justify-content-center">
-                                {{-- Toggle Active --}}
                                 <form method="POST" action="{{ route('master.wilayah.toggle', $item->id) }}">
                                     @csrf @method('PATCH')
                                     <button type="submit" class="btn btn-sm py-1 px-2 {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}"
@@ -87,7 +163,6 @@
                                         <i class="fa-solid {{ $item->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
                                     </button>
                                 </form>
-                                {{-- Edit --}}
                                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size:0.7rem"
                                         data-bs-toggle="modal" data-bs-target="#modalEdit"
                                         data-id="{{ $item->id }}"
@@ -97,7 +172,6 @@
                                         title="Edit">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-                                {{-- Delete --}}
                                 <form method="POST" action="{{ route('master.wilayah.destroy', $item->id) }}"
                                       onsubmit="return confirm('Hapus wilayah \'{{ $item->nama_wilayah }}\'?')">
                                     @csrf @method('DELETE')
@@ -127,6 +201,10 @@
     </div>
 </div>
 
+@endif
+{{-- ═══════════════════════════════════════════════════════════════════ --}}
+
+
 {{-- ── Modal Create ── --}}
 <div class="modal fade" id="modalCreate" tabindex="-1" aria-labelledby="modalCreateLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -147,12 +225,12 @@
                     @endif
                     <div class="mb-3">
                         <label class="form-label">Kode Wilayah <span class="text-danger">*</span></label>
-                        <input type="text" name="kode_wilayah" class="form-control form-control-sm @error('kode_wilayah') is-invalid @enderror"
+                        <input type="text" name="kode_wilayah" class="form-control form-control-sm"
                                value="{{ old('kode_wilayah') }}" placeholder="Contoh: DC-CBN" maxlength="20" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nama Wilayah / DC <span class="text-danger">*</span></label>
-                        <input type="text" name="nama_wilayah" class="form-control form-control-sm @error('nama_wilayah') is-invalid @enderror"
+                        <input type="text" name="nama_wilayah" class="form-control form-control-sm"
                                value="{{ old('nama_wilayah') }}" placeholder="Contoh: DC Cibinong" maxlength="100" required>
                     </div>
                     <div class="mb-1">
@@ -218,7 +296,6 @@
 
 @push('scripts')
 <script>
-    // Populate edit modal
     document.getElementById('modalEdit').addEventListener('show.bs.modal', function (e) {
         const btn = e.relatedTarget;
         document.getElementById('formEdit').action = '{{ url("master/wilayah") }}/' + btn.dataset.id;
@@ -227,7 +304,6 @@
         document.getElementById('edit_keterangan').value   = btn.dataset.ket !== 'null' ? btn.dataset.ket : '';
     });
 
-    // Auto-open modal jika ada error validasi
     @if($errors->any() && session('modal') === 'create')
         new bootstrap.Modal(document.getElementById('modalCreate')).show();
     @elseif($errors->any() && session('modal') === 'edit')
